@@ -1,0 +1,23 @@
+# TMS Backend Dockerfile
+
+FROM node:18-alpine
+
+WORKDIR /app
+
+# Install PostgreSQL client
+RUN apk add --no-cache postgresql-client
+
+# Copy package files
+COPY package*.json ./
+
+# Install dependencies
+RUN npm install
+
+# Copy source code
+COPY . .
+
+# Expose port
+EXPOSE 3001
+
+# Start application
+CMD ["npm", "run", "dev"]

@@ -1,0 +1,1187 @@
+
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <title>TMS - Транспортная Система Управления</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/logistics-full.css">
+    <link rel="stylesheet" href="css/logistics-fix.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+     <style>
+      /* ========== АГЕНТЫ ========== */
+      .agents-grid { display: block !important; }
+      .agents-container { display: flex; flex-direction: column; gap: 16px; }
+      .agents-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; padding: 16px 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 10px; color: white; }
+      .agents-header h3 { margin: 0; color: white; font-size: 20px; font-weight: 700; }
+      .agents-header .btn-success { background: white; color: #667eea; border: none; font-weight: 600; }
+      .agents-header .btn-success:hover { background: #f1f5f9; }
+      .agent-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px 24px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); width: 100%; box-sizing: border-box; }
+      .agent-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+      .agent-header h4 { margin: 0; color: #1e293b; font-size: 18px; font-weight: 600; }
+      .agent-actions { display: flex; gap: 8px; }
+      .agent-actions .btn { padding: 8px 16px; font-size: 13px; }
+      .agent-region { margin-bottom: 14px; }
+      .agent-region .badge { background: #e0e7ff; color: #4338ca; padding: 3px 12px; border-radius: 12px; font-size: 12px; font-weight: 500; display: inline-block; }
+      .agent-tariffs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 14px; padding: 14px; background: #f8fafc; border-radius: 8px; }
+      .agent-tariff-col { text-align: center; }
+      .agent-tariff-col .label { margin: 0 0 4px 0; font-size: 11px; color: #94a3b8; text-transform: uppercase; font-weight: 600; letter-spacing: 0.5px; }
+      .agent-tariff-col .value { margin: 0; font-size: 15px; color: #1e293b; font-weight: 600; }
+      .agent-footer { display: flex; justify-content: space-between; align-items: flex-start; gap: 20px; }
+      .agent-cities { flex: 1; }
+      .agent-cities .label { margin: 0 0 6px 0; font-size: 11px; color: #94a3b8; text-transform: uppercase; font-weight: 600; letter-spacing: 0.5px; }
+      .agent-cities-list { display: flex; flex-wrap: wrap; gap: 6px; }
+      .city-tag { background: #f1f5f9; color: #475569; padding: 4px 10px; border-radius: 6px; font-size: 12px; border: 1px solid #e2e8f0; }
+      .city-tag.empty { color: #94a3b8; background: transparent; border: none; padding: 4px 0; }
+      .agent-city-tariff { text-align: right; flex-shrink: 0; }
+      .agent-city-tariff .label { margin: 0 0 4px 0; font-size: 11px; color: #94a3b8; text-transform: uppercase; font-weight: 600; letter-spacing: 0.5px; }
+      .agent-city-tariff .value { margin: 0; font-size: 15px; color: #059669; font-weight: 700; }
+      @media (max-width: 768px) {
+        .agent-tariffs { grid-template-columns: 1fr; gap: 10px; }
+        .agent-footer { flex-direction: column; gap: 12px; }
+        .agent-city-tariff { text-align: left; }
+        .agent-header { flex-direction: column; align-items: flex-start; gap: 10px; }
+        .agent-actions { width: 100%; }
+        .agent-actions .btn { flex: 1; }
+        .agents-header { flex-direction: column; gap: 12px; align-items: stretch; }
+        .agents-header .btn-success { width: 100%; }
+      }
+      /* ========== АГЕНТЫ ГОРОДА (модалка) ========== */
+      .city-agents-section { border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; margin-bottom: 16px; background: #f8fafc; }
+      .city-agents-controls { display: flex; gap: 8px; margin-bottom: 12px; }
+      .city-agents-controls input { flex: 1; padding: 10px 14px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 14px; }
+      .city-agents-list { display: flex; flex-wrap: wrap; gap: 8px; min-height: 32px; }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Боковая панель навигации -->
+        <nav class="sidebar">
+            <div class="logo">
+                <h2>🚚 TMS Pro</h2>
+            </div>
+            <ul class="nav-menu">
+                <li class="nav-item active" data-view="calculator">
+                    <span class="icon">🧮</span>
+                    <span>Калькулятор</span>
+                </li>
+                <li class="nav-item" data-view="manager">
+                    <span class="icon">📋</span>
+                    <span>Менеджер заявок</span>
+                </li>
+                <li class="nav-item" data-view="logistic">
+                    <span class="icon">📅</span>
+                    <span>Логист</span>
+                </li>
+                <li class="nav-item" data-view="map">
+                    <span class="icon">🗺️</span>
+                    <span>Карта</span>
+                </li>
+                <li class="nav-item" data-view="reports">
+                    <span class="icon">📊</span>
+                    <span>Отчеты</span>
+                </li>
+                <li class="nav-item" data-view="test-api">
+                    <span class="icon">🔍</span>
+                    <span>Тест 1C API</span>
+                </li>
+            </ul>
+        </nav>
+
+        <!-- Основной контент -->
+        <main class="main-content">
+            <!-- Шапка -->
+            <header class="header">
+                <h1 id="page-title">Калькулятор "Калькулятор расчета стоимости"</h1>
+                <div class="user-info">
+                    <span>👤 Менеджер</span>
+                </div>
+            </header>
+
+            <!-- View: Калькулятор "Калькулятор расчета стоимости" -->
+            <section id="calculator-view" class="view active">
+                <div class="tms-calculator-container">
+                    <!-- Логотип компании -->
+                    <div class="company-logo">
+                        <span class="icon">🚛</span>
+                        <div class="name">Калькулятор расчета стоимости</div>
+                        <div class="tagline">Профессиональная логистика по России</div>
+                    </div>
+
+                    <!-- Заголовок -->
+                    <h1>Калькулятор стоимости перевозки груза</h1>
+                    
+                    <!-- Табы -->
+                    <div class="calc-tabs">
+                        <button class="calc-tab-btn active" onclick="window.showCalcTab('calculator', event)">📊 Калькулятор</button>
+                        <button class="calc-tab-btn" onclick="window.showCalcTab('tariffs', event)">🏙️ Тарифы городов</button>
+                        <button class="calc-tab-btn" onclick="window.showCalcTab('agents', event)">🚚 Агенты</button>
+                        <button class="calc-tab-btn" onclick="window.showCalcTab('map', event)">🗺️ Карта</button>
+                    </div>
+
+                    <!-- Вкладка: Калькулятор -->
+                    <div id="calculator" class="calc-tab-content active">
+                        <!-- Выбор маршрута -->
+                        <h2>📍 Выбор маршрута</h2>
+                        <div class="row">
+                            <div class="form-group">
+                                <label>Откуда:</label>
+                                <input type="text" id="fromCity" list="cityList" placeholder="Начните вводить город...">
+                            </div>
+                            <div class="form-group">
+                                <label>Куда:</label>
+                                <input type="text" id="toCity" list="cityList" placeholder="Начните вводить город...">
+                            </div>
+                            <datalist id="cityList"></datalist>
+                            <div class="form-group">
+                                <label>Расстояние (км):</label>
+                                <input type="number" id="distance" placeholder="0">
+                            </div>
+                        </div>
+                        <button class="btn btn-success" onclick="calculateDistanceAuto()">📏 Рассчитать расстояние</button>
+
+                        <!-- Информация о городе -->
+                        <div class="city-info" id="cityInfo">
+                            Выберите город назначения для просмотра информации
+                        </div>
+
+                        <!-- Удаленные города -->
+                        <div id="remoteSection" class="remote-cities" style="display: none;">
+                            <label>🏙️ Отдаленные города (доплата):</label>
+                            <div id="remoteCities">
+                                <label class="checkbox-label">
+                                    <input type="checkbox" id="useRemoteCity" onchange="toggleRemoteCitySelect()">
+                                    <span>Не учитывать удаленный город в расчете</span>
+                                </label>
+                                <select id="remoteCitySelect" style="margin-top: 10px; display: none;">
+                                    <option value="">-- Выберите удаленный город --</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <!-- Данные о грузе -->
+                        <h2>📦 Данные о грузе</h2>
+                        <div class="row">
+                            <div class="form-group">
+                                <label>Фактический вес (кг):</label>
+                                <input type="number" id="weight" placeholder="0">
+                            </div>
+                            <div class="form-group">
+                                <label>Объем (м³):</label>
+                                <input type="number" id="volume" placeholder="0" step="0.01">
+                            </div>
+                        </div>
+
+                        <button class="btn" onclick="calculate()">💰 Рассчитать стоимость</button>
+
+                        <!-- Результат -->
+                        <div class="result-box" id="result"></div>
+                    </div>
+
+                    <!-- Вкладка: Тарифы -->
+                    <div id="tariffs" class="calc-tab-content">
+                        <!-- Поиск -->
+                        <div class="calc-search-box">
+                            <input type="text" id="searchInput" placeholder="🔍 Поиск по городу или региону..." oninput="filterTariffs()">
+                        </div>
+
+                        <!-- Кнопки действий -->
+                        <div class="calc-action-buttons">
+                            <button class="calc-action-btn" onclick="openAddModal()">➕ Добавить город</button>
+                            <button class="calc-action-btn" onclick="openEditModal()">✏️ Редактировать</button>
+                            <button class="calc-action-btn calc-danger" onclick="deleteCity()">🗑️ Удалить</button>
+                            <button class="calc-action-btn calc-success" onclick="saveTariffs()">💾 Сохранить</button>
+                            <button class="calc-action-btn calc-purple" onclick="resetToDefaults()">🔄 Сбросить данные</button>
+                        </div>
+
+                        <!-- Статистика -->
+                        <div class="calc-stats-inline">
+                            <div class="calc-stat-inline-item">
+                                <div class="calc-stat-inline-number" id="totalCities">0</div>
+                                <div class="calc-stat-inline-label">Всего городов</div>
+                            </div>
+                            <div class="calc-stat-inline-item">
+                                <div class="calc-stat-inline-number" id="autoCount">0</div>
+                                <div class="calc-stat-inline-label">Авто</div>
+                            </div>
+                            <div class="calc-stat-inline-item">
+                                <div class="calc-stat-inline-number" id="flyCount">0</div>
+                                <div class="calc-stat-inline-label">Авиа</div>
+                            </div>
+                        </div>
+
+                        <!-- Таблица тарифов -->
+                        <div class="table-container">
+                            <table id="tariffsTable">
+                                <thead>
+                                    <tr>
+                                        <th>№</th>
+                                        <th>Город</th>
+                                        <th>Регион</th>
+                                        <th>Тип</th>
+                                        <th>Миля 1</th>
+                                        <th>Миля 2</th>
+                                        <th>Миля 3</th>
+                                        <th>Терминал</th>
+                                    </tr>
+                                </thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Вкладка: Агенты -->
+                    <div id="agents" class="calc-tab-content">
+                        <div class="agents-grid" id="agents-grid">
+                            <div class="empty-state">
+                                <p>Загрузка агентов...</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Вкладка: Карта -->
+                    <div id="map" class="calc-tab-content">
+                        <!-- Настройки карты -->
+                        <div class="row">
+                            <div class="form-group">
+                                <label>Тип карты:</label>
+                                <select id="mapType" onchange="updateMap()">
+                                    <option value="OpenStreetMap">OpenStreetMap</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Регион:</label>
+                                <select id="regionFilter" onchange="updateMap()">
+                                    <option value="all">Все регионы</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <!-- Кнопки карты -->
+                        <div class="row">
+                            <button class="btn" onclick="generateMap()">🗺️ Создать карту</button>
+                            <button class="btn btn-success" onclick="toggleFullscreen()">⛶ Полный экран</button>
+                        </div>
+                        
+                        <!-- Легенда -->
+                        <div class="legend">
+                            <h3>Легенда</h3>
+                            <div class="legend-item">
+                                <div class="legend-color" style="background: #3498db;"></div>
+                                <span>Авто перевозка</span>
+                            </div>
+                            <div class="legend-item">
+                                <div class="legend-color" style="background: #e74c3c;"></div>
+                                <span>Авиа перевозка</span>
+                            </div>
+                        </div>
+
+                        <!-- Контейнер карты -->
+                        <div id="mapContainer" style="height: 500px; background: #f0f0f0; border-radius: 10px; margin-top: 20px; display: flex; align-items: center; justify-content: center;">
+                            <p>Нажмите "Создать карту" для отображения</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+                
+            <!-- View: Менеджер - Создание заявок -->
+            <section id="manager-view" class="view">
+                <div class="card">
+                    <h3>Новая заявка на перевозку</h3>
+                    <form id="order-form" class="order-form">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="client">Клиент *</label>
+                                <input type="text" id="client" name="client" required 
+                                       list="clients-list" placeholder="Начните вводить название...">
+                                <datalist id="clients-list"></datalist>
+                            </div>
+                            <div class="form-group">
+                                <label for="order-type">Тип перевозки</label>
+                                <select id="order-type" name="order-type">
+                                    <option value="full">Фура (полная загрузка)</option>
+                                    <option value="part">Часть машины</option>
+                                    <option value="express">Экспресс доставка</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group full-width">
+                                <label for="pickup-address">Адрес загрузки *</label>
+                                <input type="text" id="pickup-address" name="pickup-address" required 
+                                       class="address-input" placeholder="Введите адрес загрузки...">
+                                <div class="address-suggestions" id="pickup-suggestions"></div>
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="pickup-contact">Контактное лицо</label>
+                                <input type="text" id="pickup-contact" placeholder="ФИО">
+                            </div>
+                            <div class="form-group">
+                                <label for="pickup-phone">Телефон</label>
+                                <input type="tel" id="pickup-phone" placeholder="+7 (___) ___-__-__">
+                            </div>
+                        </div>
+                        
+                        <div class="form-row">
+                            <div class="form-group full-width">
+                                <label for="delivery-address">Адрес доставки *</label>
+                                <input type="text" id="delivery-address" name="delivery-address" required 
+                                       class="address-input" placeholder="Введите адрес доставки...">
+                                <div class="address-suggestions" id="delivery-suggestions"></div>
+                            </div>
+                        </div>
+                        
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="delivery-contact">Контактное лицо</label>
+                                <input type="text" id="delivery-contact" placeholder="ФИО">
+                            </div>
+                            <div class="form-group">
+                                <label for="delivery-phone">Телефон</label>
+                                <input type="tel" id="delivery-phone" placeholder="+7 (___) ___-__-__">
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="cargo-type">Тип груза</label>
+                                <select id="cargo-type">
+                                    <option value="general">Общий груз</option>
+                                    <option value="fragile">Хрупкий</option>
+                                    <option value="perishable">Скоропортящийся</option>
+                                    <option value="oversized">Габаритный</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="weight">Вес (кг)</label>
+                                <input type="number" id="weight" min="1" placeholder="0">
+                            </div>
+                            <div class="form-group">
+                                <label for="volume">Объем (м³)</label>
+                                <input type="number" id="volume" min="0.1" step="0.1" placeholder="0">
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="order-date">Дата подачи</label>
+                                <input type="datetime-local" id="order-date" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="deadline">Дедлайн доставки</label>
+                                <input type="datetime-local" id="deadline">
+                            </div>
+                            <div class="form-group">
+                                <label for="priority">Приоритет</label>
+                                <select id="priority">
+                                    <option value="normal">Обычный</option>
+                                    <option value="high">Высокий</option>
+                                    <option value="urgent">Срочный</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group full-width">
+                                <label for="comments">Комментарии</label>
+                                <textarea id="comments" rows="3" placeholder="Дополнительная информация..."></textarea>
+                            </div>
+                        </div>
+
+                        <div class="form-actions">
+                            <button type="button" class="btn btn-secondary" id="btn-clear">Очистить</button>
+                            <button type="submit" class="btn btn-primary">Создать заявку</button>
+                        </div>
+                    </form>
+                </div>
+                
+                <!-- Список активных заявок -->
+                <div class="card">
+                    <h3>Активные заявки</h3>
+                    <div class="table-responsive">
+                        <table id="orders-table" class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Клиент</th>
+                                    <th>Загрузка</th>
+                                    <th>Доставка</th>
+                                    <th>Дата</th>
+                                    <th>Статус</th>
+                                    <th>Действия</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- View: Логист - Планирование маршрутов -->
+            <section id="logistic-view" class="view">
+                <div class="logistics-container">
+                    <!-- Вкладки -->
+                    <div class="logistics-tabs">
+                        <button class="logistics-tab active" data-tab="planning">📅 Планирование</button>
+                        <button class="logistics-tab" data-tab="assignment">👤 Назначение</button>
+                    </div>
+
+                    <!-- Вкладка 1: Планирование -->
+                    <div class="logistics-tab-content active" id="planning-content">
+                        <!-- Фильтры -->
+                        <div class="planning-filters card">
+                            <div class="filter-row">
+                                <div class="filter-group">
+                                    <label>📅 С:</label>
+                                    <input type="date" id="planning-date-from">
+                                </div>
+                                <div class="filter-group">
+                                    <label>📅 По:</label>
+                                    <input type="date" id="planning-date-to">
+                                </div>
+                                <div class="filter-group">
+                                    <label>Статус:</label>
+                                    <select id="planning-status-filter">
+                                        <option value="all">Все</option>
+                                        <option value="new">Новые</option>
+                                        <option value="planned">Планированные</option>
+                                    </select>
+                                </div>
+                                <div class="filter-group">
+                                    <button class="btn btn-primary" id="btn-apply-planning-filter">Применить</button>
+                                    <button class="btn btn-secondary" id="btn-reset-planning-filter">Сбросить</button>
+                                    <button class="btn btn-success" id="btn-refresh-orders">🔄 Обновить</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Список заявок для планирования -->
+                        <div class="card">
+                            <div class="card-header">
+                                <h3>📦 Заявки для планирования</h3>
+                                <div class="header-actions">
+                                    <button class="btn btn-success" id="btn-create-route-from-selected">
+                                        ➕ Создать маршрут
+                                    </button>
+                                    <button class="btn btn-primary" id="btn-plan-selected" style="display: none;">
+                                        📅 Запланировать (<span id="plan-selected-count">0</span>)
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="table-responsive">
+                                <table id="planning-orders-table" class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th width="40">✓</th>
+                                        <th>ID</th>
+                                        <th>Клиент</th>
+                                        <th>Адрес отправления</th>
+                                        <th>Адрес доставки</th>
+                                        <th>Дата забрать</th>
+                                        <th>Дата доставить</th>
+                                        <th>Вес (кг)</th>
+                                        <th>Объём (м³)</th>
+                                        <th width="180">Действия</th>
+                                    </tr>
+                                </thead>
+                                    <tbody></tbody>
+                                </table>
+                            </div>
+                        </div>
+                        
+                        <!-- Конструктор маршрута -->
+                        <div class="card" id="route-builder-card" style="display: none;">
+                            <div class="card-header">
+                                <h3>🛠️ Конструктор маршрута</h3>
+                                <div style="display: flex; gap: 10px;">
+                                    <button class="btn btn-small btn-secondary" id="btn-toggle-route-builder">👁️ Скрыть</button>
+                                    <button class="btn btn-small btn-secondary" id="btn-cancel-route">❌ Отмена</button>
+                                </div>
+                            </div>
+                            <div class="route-builder">
+                                <div class="route-info">
+                                    <div class="form-group">
+                                        <label>Название маршрута:</label>
+                                        <input type="text" id="route-name" placeholder="Например: Москва - СПб">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Тип транспорта:</label>
+                                        <select id="route-transport-type">
+                                            <option value="auto">🚛 Авто</option>
+                                            <option value="fly">✈️ Авиа</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <!-- Этапы маршрута -->
+                                <div class="route-stages">
+                                    <h4>Этапы маршрута:</h4>
+                                    
+                                    <!-- 1 миля: Забрать тару -->
+                                    <div class="stage-block" data-stage="mile1_pickup">
+                                        <div class="stage-header">
+                                            <span class="stage-number">1</span>
+                                            <span class="stage-name">1 миля: Забрать тару со склада</span>
+                                            <span class="stage-type">📦 Начало</span>
+                                        </div>
+                                        <div class="stage-form">
+                                            <div class="form-row">
+                                                <div class="form-group">
+                                                    <label>Адрес:</label>
+                                                    <input type="text" id="stage-mile1-address" placeholder="Адрес склада">
+                                                </div>
+                                                <div class="form-group">
+                                                    <label>Дата:</label>
+                                                    <input type="date" id="stage-mile1-date">
+                                                </div>
+                                                <div class="form-group">
+                                                    <label>Перевозчик:</label>
+                                                    <select id="stage-mile1-carrier">
+                                                        <option value="">Выберите перевозчика</option>
+                                                    </select>
+                                                </div>
+                                                <div class="form-group">
+                                                    <button type="button" class="btn btn-small btn-secondary" onclick="logistics.clearStage('stage-mile1')">
+                                                        🗑️
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- 1 миля: Забрать груз -->
+                                    <div class="stage-block" data-stage="mile1_load">
+                                        <div class="stage-header">
+                                            <span class="stage-number">2</span>
+                                            <span class="stage-name">1 миля: Забрать груз у клиента</span>
+                                            <span class="stage-type">📥 Загрузка</span>
+                                        </div>
+                                        <div class="stage-form">
+                                            <div class="form-row">
+                                                <div class="form-group">
+                                                    <label>Адрес:</label>
+                                                    <input type="text" id="stage-mile1-load-address" placeholder="Адрес клиента">
+                                                </div>
+                                                <div class="form-group">
+                                                    <label>Дата:</label>
+                                                    <input type="date" id="stage-mile1-load-date">
+                                                </div>
+                                                <div class="form-group">
+                                                    <label>Перевозчик:</label>
+                                                    <select id="stage-mile1-load-carrier">
+                                                        <option value="">Выберите перевозчика</option>
+                                                    </select>
+                                                </div>
+                                                <div class="form-group">
+                                                    <button type="button" class="btn btn-small btn-secondary" onclick="logistics.clearStage('stage-mile1-load')">
+                                                        🗑️
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- 2 миля: Магистраль/Авиа -->
+                                    <div class="stage-block" data-stage="mile2">
+                                        <div class="stage-header">
+                                            <span class="stage-number">3</span>
+                                            <span class="stage-name">2 миля: Магистраль</span>
+                                            <span class="stage-type">🚚 Транзит</span>
+                                        </div>
+                                        <div class="stage-form">
+                                            <div class="form-row">
+                                                <div class="form-group">
+                                                    <label>Направление:</label>
+                                                    <input type="text" id="stage-mile2-direction" placeholder="Например: Москва - СПб">
+                                                </div>
+                                                <div class="form-group">
+                                                    <label>Дата отправления:</label>
+                                                    <input type="date" id="stage-mile2-date">
+                                                </div>
+                                                <div class="form-group">
+                                                    <label>Перевозчик:</label>
+                                                    <select id="stage-mile2-carrier">
+                                                        <option value="">Выберите перевозчика</option>
+                                                    </select>
+                                                </div>
+                                                <div class="form-group">
+                                                    <button type="button" class="btn btn-small btn-secondary" onclick="logistics.clearStage('stage-mile2')">
+                                                        🗑️
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- 3 миля: Доставка -->
+                                    <div class="stage-block" data-stage="mile3">
+                                        <div class="stage-header">
+                                            <span class="stage-number">4</span>
+                                            <span class="stage-name">3 миля: Доставка до клиента</span>
+                                            <span class="stage-type">🏠 Доставка</span>
+                                        </div>
+                                        <div class="stage-form">
+                                            <div class="form-row">
+                                                <div class="form-group">
+                                                    <label>Адрес доставки:</label>
+                                                    <input type="text" id="stage-mile3-address" placeholder="Адрес получения">
+                                                </div>
+                                                <div class="form-group">
+                                                    <label>Дата:</label>
+                                                    <input type="date" id="stage-mile3-date">
+                                                </div>
+                                                <div class="form-group">
+                                                    <label>Перевозчик:</label>
+                                                    <select id="stage-mile3-carrier">
+                                                        <option value="">Выберите перевозчика</option>
+                                                    </select>
+                                                </div>
+                                                <div class="form-group">
+                                                    <button type="button" class="btn btn-small btn-secondary" onclick="logistics.clearStage('stage-mile3')">
+                                                        🗑️
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- 3 миля: Возврат тары -->
+                                    <div class="stage-block" data-stage="mile3_return">
+                                        <div class="stage-header">
+                                            <span class="stage-number">5</span>
+                                            <span class="stage-name">3 миля: Возврат тары</span>
+                                            <span class="stage-type">📤 Возврат</span>
+                                        </div>
+                                        <div class="stage-form">
+                                            <div class="form-row">
+                                                <div class="form-group checkbox-group">
+                                                    <input type="checkbox" id="stage-mile3-return-enable" onchange="logistics.toggleReturnStage(this.checked)">
+                                                    <label for="stage-mile3-return-enable">Требуется возврат тары</label>
+                                                </div>
+                                                <div class="form-group">
+                                                    <label>Адрес возврата:</label>
+                                                    <input type="text" id="stage-mile3-return-address" placeholder="Адрес возврата" disabled>
+                                                </div>
+                                                <div class="form-group">
+                                                    <label>Дата:</label>
+                                                    <input type="date" id="stage-mile3-return-date" disabled>
+                                                </div>
+                                                <div class="form-group">
+                                                    <label>Перевозчик:</label>
+                                                    <select id="stage-mile3-return-carrier" disabled>
+                                                        <option value="">Выберите перевозчика</option>
+                                                    </select>
+                                                </div>
+                                                <div class="form-group">
+                                                    <button type="button" class="btn btn-small btn-secondary" onclick="logistics.clearStage('stage-mile3-return')" disabled>
+                                                        🗑️
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="route-actions">
+                                    <button class="btn btn-primary" id="btn-save-route">💾 Сохранить маршрут</button>
+                                    <button class="btn btn-success" id="btn-save-and-continue">✅ Сохранить и добавить ещё</button>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Сохранённые маршруты -->
+                        <div class="card">
+                            <div class="card-header">
+                                <h3>💾 Сохранённые маршруты</h3>
+                            </div>
+                            <div class="saved-routes-grid" id="saved-routes-list" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 15px; padding: 15px;">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Вкладка 2: Назначение -->
+                    <div class="logistics-tab-content" id="assignment-content">
+                        <!-- Верхняя часть: Этапы по датам -->
+                        <div class="assignment-top-section card">
+                            <div class="card-header">
+                                <h3>📅 Этапы на даты</h3>
+                                <div class="filter-row">
+                                    <div class="filter-group">
+                                        <label>📅 С:</label>
+                                        <input type="date" id="assignment-date-from">
+                                    </div>
+                                    <div class="filter-group">
+                                        <label>📅 По:</label>
+                                        <input type="date" id="assignment-date-to">
+                                    </div>
+                                    <div class="filter-group">
+                                        <button class="btn btn-primary btn-small" id="btn-apply-assignment-filter">Применить</button>
+                                        <button class="btn btn-success btn-small" id="btn-refresh-assignment">🔄 Обновить</button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="card-content">
+                                <div class="assignment-dates-grid" id="assignment-dates-list"></div>
+                            </div>
+                        </div>
+
+                        <!-- Нижняя часть: Водители и этапы -->
+                        <div class="assignment-bottom-section">
+                            <!-- Левая часть: Назначенные этапы -->
+                            <div class="assignment-left-panel card">
+                                <div class="card-header">
+                                    <h3>📋 Назначенные этапы</h3>
+                                    <div style="display: flex; gap: 10px; align-items: center;">
+                                        <span id="assigned-stages-count" class="badge">0</span>
+                                        <span id="selected-driver-name" style="font-size: 12px; color: #64748b;"></span>
+                                    </div>
+                                </div>
+                                <div class="card-content">
+                                    <div class="assigned-stages-list" id="assigned-stages-list">
+                                        <div class="empty-state">
+                                            <p>Выберите водителя для просмотра назначенных этапов</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="card-content" style="padding: 15px; background: #f8fafc; border-top: 1px solid #e2e8f0;">
+                                    <h4 style="margin: 0 0 10px 0;">📌 Назначить на:</h4>
+                                    <div style="display: flex; gap: 10px;">
+                                        <button class="btn btn-small btn-success" id="btn-assign-to-driver">👤 Водителя</button>
+                                        <button class="btn btn-small btn-info" id="btn-assign-selected">✓ Назначить (<span id="selected-count">0</span>)</button>
+                                    </div>
+                                    <div style="margin-top: 10px; font-size: 11px; color: #64748b;">
+                                        💡 Ctrl+клик - множественный выбор | Shift+клик - диапазон | Двойной клик - информация
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Правая часть: Водители и агенты -->
+                            <div class="assignment-right-panel card">
+                                <div class="card-header">
+                                    <h3>👥 Водители и агенты</h3>
+                                    <button class="btn btn-small btn-primary" id="btn-add-person">➕ Добавить</button>
+                                </div>
+                                <div class="card-content">
+                                    <div class="drivers-list" id="drivers-list">
+                                        <div class="empty-state">
+                                            <p>Нет водителей или агентов</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+                
+            <!-- View: Карта заявок -->
+            <section id="map-view" class="view">
+                <div class="card">
+                    <div class="map-controls">
+                        <div class="filter-group">
+                            <label>Фильтр по статусу:</label>
+                            <select id="map-status-filter">
+                                <option value="all">Все</option>
+                                <option value="new">Новые</option>
+                                <option value="planned">Планированные</option>
+                                <option value="in_transit">В пути</option>
+                                <option value="delivered">Доставлены</option>
+                            </select>
+                        </div>
+                        <button class="btn btn-primary" id="btn-show-all">Показать все</button>
+                    </div>
+                    <div id="main-map" class="map-container" style="height: 600px;"></div>
+                </div>
+            </section>
+                
+            <!-- View: Отчеты -->
+            <section id="reports-view" class="view">
+                <div class="reports-container">
+                    <div class="card">
+                        <h3>Статистика за период</h3>
+                        <div class="report-filters">
+                            <input type="date" id="report-start-date">
+                            <input type="date" id="report-end-date">
+                            <button class="btn btn-primary" id="btn-generate-report">Сгенерировать</button>
+                        </div>
+                        <div class="stats-grid">
+                            <div class="stat-card">
+                                <h4>Всего заявок</h4>
+                                <p class="stat-value" id="stat-total">0</p>
+                            </div>
+                            <div class="stat-card">
+                                <h4>Доставлено</h4>
+                                <p class="stat-value" id="stat-delivered">0</p>
+                            </div>
+                            <div class="stat-card">
+                                <h4>В пути</h4>
+                                <p class="stat-value" id="stat-in-transit">0</p>
+                            </div>
+                            <div class="stat-card">
+                                <h4>Среднее время доставки</h4>
+                                <p class="stat-value" id="stat-avg-time">0 дней</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <h3>Детальный отчет</h3>
+                        <div class="table-responsive">
+                            <table id="report-table" class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Клиент</th>
+                                        <th>Дата создания</th>
+                                        <th>Дата доставки</th>
+                                        <th>Статус</th>
+                                        <th>Время в пути</th>
+                                    </tr>
+                                </thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            
+            <!-- View: Тест 1C API -->
+            <section id="test-api-view" class="view">
+                <div class="reports-container">
+                    <div class="card">
+                        <h3>📖 Документация</h3>
+                        <div style="padding:20px;">
+                            <p style="color:#64748b;margin-bottom:20px;">
+                                Основной функционал системы работает через localStorage. Данные сохраняются локально в браузере.
+                            </p>
+                            
+                            <div style="margin-top:20px;padding:15px;background:#f8f9fa;border-radius:8px;">
+                                <h4>📖 Как пользоваться:</h4>
+                                <ol style="margin:10px 0;padding-left:20px;color:#64748b;">
+                                    <li>Перейдите на вкладку "Тарифы городов"</li>
+                                    <li>Настройте агентов для каждой мили (опционально)</li>
+                                    <li>Используйте калькулятор для расчёта стоимости</li>
+                                    <li>Данные сохраняются автоматически</li>
+                                </ol>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Модальное окно редактирования заявки -->
+    <div id="order-modal" class="modal">
+        <div class="modal-content">
+            <span class="modal-close">&times;</span>
+            <h3>Редактирование заявки</h3>
+            <div id="modal-body"></div>
+        </div>
+    </div>
+
+    <!-- Модальное окно редактирования города -->
+    <div id="city-edit-modal" class="calc-modal">
+        <div class="calc-modal-content">
+            <div class="calc-modal-header">
+                <h2>✏️ Редактировать город</h2>
+                <button class="calc-close-btn" onclick="closeCityEditModal()">&times;</button>
+            </div>
+            <div class="calc-modal-body">
+                <input type="hidden" id="edit-city-name">
+                <div class="form-group">
+                    <label>Город:</label>
+                    <input type="text" id="edit-city-display" disabled>
+                </div>
+                <div class="form-group">
+                    <label>Регион:</label>
+                    <input type="text" id="edit-region">
+                </div>
+                <div class="form-group">
+                    <label>Терминал:</label>
+                    <input type="text" id="edit-terminal">
+                </div>
+                <div class="form-group">
+                    <label>Тип перевозки:</label>
+                    <select id="edit-transport-type">
+                        <option value="auto">🚛 Авто</option>
+                        <option value="fly">✈️ Авиа</option>
+                    </select>
+                </div>
+                
+                <!-- Миля 1: Забор -->
+                <div class="form-group" style="border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; background: #f8fafc;">
+                    <label style="font-weight: 600; color: #1e293b;">📦 Миля 1 (сбор груза):</label>
+                    <select id="edit-mile1-agent" onchange="updateMile1Display()" style="margin: 8px 0; width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 6px;">
+                        <option value="">📋 Без агента</option>
+                    </select>
+                    <div id="mile1-tariff-display" style="display: none; margin-top: 12px; padding: 12px; background: white; border-radius: 6px;"></div>
+                </div>
+                
+                <!-- Миля 2: Магистраль -->
+                <div class="form-group" style="border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; background: #f8fafc;">
+                    <label style="font-weight: 600; color: #1e293b;">🚚 Миля 2 (магистраль):</label>
+                    <select id="edit-mile2-agent" onchange="updateMile2Display()" style="margin: 8px 0; width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 6px;">
+                        <option value="">📋 Без агента</option>
+                    </select>
+                    <div id="mile2-tariff-display" style="display: none; margin-top: 12px; padding: 12px; background: white; border-radius: 6px;"></div>
+                </div>
+                
+                <!-- Миля 3: Доставка -->
+                <div class="form-group" style="border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; background: #f8fafc;">
+                    <label style="font-weight: 600; color: #1e293b;">🏠 Миля 3 (доставка):</label>
+                    <select id="edit-mile3-agent" onchange="updateMile3Display()" style="margin: 8px 0; width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 6px;">
+                        <option value="">📋 Без агента</option>
+                    </select>
+                    <div id="mile3-tariff-display" style="display: none; margin-top: 12px; padding: 12px; background: white; border-radius: 6px;"></div>
+                </div>
+            </div>
+            <div class="calc-modal-footer">
+                <button class="calc-action-btn calc-danger" onclick="deleteCurrentCity()">🗑️ Удалить город</button>
+                <button class="calc-action-btn calc-success" onclick="saveCityEdit()">💾 Сохранить изменения</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модальное окно создания маршрута (старое) -->
+    <div id="route-modal" class="modal">
+        <div class="modal-content" style="max-width: 600px;">
+            <span class="modal-close" onclick="logistic.closeRouteModal()">&times;</span>
+            <h2>🗺️ Создание маршрута</h2>
+            
+            <div class="route-modal-body">
+                <div class="form-group">
+                    <label>Тип транспорта:</label>
+                    <select id="route-transport-type" onchange="logistic.drawCurrentRoute()">
+                        <option value="auto">🚛 Авто</option>
+                        <option value="fly">✈️ Авиа (прямая)</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label>Добавить точку:</label>
+                    <div class="add-point-row">
+                        <input type="text" id="new-point-address" placeholder="Введите адрес (например: Москва, ул. Ленина 1)">
+                        <button class="btn btn-success" id="btn-add-point">➕</button>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label>Дата этапа:</label>
+                    <input type="date" id="new-point-date" placeholder="Дата">
+                </div>
+                
+                <div class="form-group">
+                    <label>👤 Водитель этапа:</label>
+                    <select id="new-point-driver">
+                        <option value="">Без назначения</option>
+                    </select>
+                </div>
+                
+                <div class="route-points-container">
+                    <h4>Точки маршрута:</h4>
+                    <div id="route-points-list" class="route-points-list"></div>
+                </div>
+                
+                <div id="route-summary" class="route-summary"></div>
+            </div>
+            
+            <div class="modal-actions">
+                <button class="btn btn-secondary" onclick="logistic.closeRouteModal()">Отмена</button>
+                <button class="btn btn-primary" id="btn-save-route">💾 Сохранить маршрут</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модальное окно конструктора маршрутов v3 -->
+    <div id="route-builder-modal" class="modal modal-large">
+        <div class="modal-content" style="max-width: 1200px;">
+            <span class="modal-close" onclick="logistic.closeRouteBuilder()">&times;</span>
+            <div class="modal-header">
+                <h2>🛠️ Конструктор маршрутов с термобоксами</h2>
+            </div>
+            
+            <div class="route-builder-container">
+                <!-- Левая панель - Настройки -->
+                <div class="builder-sidebar">
+                    <div class="form-group">
+                        <label>📍 Регион:</label>
+                        <select id="route-region">
+                            <option value="">Выберите регион</option>
+                            <option value="center">Центральный</option>
+                            <option value="northwest">Северо-Запад</option>
+                            <option value="south">Южный</option>
+                            <option value="siberia">Сибирь</option>
+                            <option value="far-east">Дальний Восток</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>📝 Название маршрута:</label>
+                        <input type="text" id="route-name" placeholder="Например: Москва - СПб">
+                    </div>
+                    
+                    <div class="builder-sections">
+                        <div class="builder-section">
+                            <h3>🛣️ Этапы маршрута</h3>
+                            <div id="route-legs-list" class="legs-list"></div>
+                            <div class="add-leg-buttons">
+                                <button class="btn btn-small" onclick="logistic.addLeg('mile1')">📦 1 миля</button>
+                                <button class="btn btn-small" onclick="logistic.addLeg('mile2')">🚚 2 миля</button>
+                                <button class="btn btn-small" onclick="logistic.addLeg('mile3')">🏠 3 миля</button>
+                                <button class="btn btn-small btn-warning" onclick="logistic.addLeg('pickup')">📥 Загрузка</button>
+                                <button class="btn btn-small btn-warning" onclick="logistic.addLeg('delivery')">📤 Выгрузка</button>
+                            </div>
+                        </div>
+                        
+                        <div class="builder-section">
+                            <h3>🌡️ Термобоксы</h3>
+                            <div id="route-boxes-list" class="boxes-list"></div>
+                            <button class="btn btn-success btn-small" id="btn-calculate-boxes" style="width: 100%; margin-top: 10px;">
+                                🧮 Рассчитать боксы
+                            </button>
+                        </div>
+                        
+                        <div class="builder-section">
+                            <h3>📋 Шаблоны маршрутов</h3>
+                            <div id="route-templates-list" class="templates-list"></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Правая панель - Карта и итог -->
+                <div class="builder-main">
+                    <div class="builder-map">
+                        <h3>🗺️ Карта маршрута</h3>
+                        <div id="builder-map" class="map-container" style="height: 400px;"></div>
+                    </div>
+                    
+                    <div id="route-summary" class="route-summary-builder"></div>
+                    
+                    <div class="builder-actions">
+                        <button class="btn btn-secondary" onclick="logistic.clearRoute()">🗑️ Очистить</button>
+                        <button class="btn btn-info" id="btn-return-route" onclick="logistic.buildReturnRoute()">🔄 Построить возврат</button>
+                        <button class="btn btn-primary" id="btn-save-route" onclick="logistic.saveCurrentRoute()">💾 Сохранить маршрут</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модальное окно: Добавить водителя -->
+    <div id="driver-modal" class="modal">
+        <div class="modal-content" style="max-width: 500px;">
+            <div class="modal-header">
+                <h3>👤 Добавить водителя</h3>
+                <button class="btn-close" onclick="document.getElementById('driver-modal').classList.remove('active')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>ФИО водителя:</label>
+                    <input type="text" id="driver-name" placeholder="Иванов Иван Иванович">
+                </div>
+                <div class="form-group">
+                    <label>Телефон:</label>
+                    <input type="tel" id="driver-phone" placeholder="+7 (916) 123-45-67">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn" onclick="document.getElementById('driver-modal').classList.remove('active')">Отмена</button>
+                <button class="btn btn-primary" onclick="logistic.addDriver()">➕ Добавить</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модальное окно: Добавить транспорт -->
+    <div id="vehicle-modal" class="modal">
+        <div class="modal-content" style="max-width: 500px;">
+            <div class="modal-header">
+                <h3>🚚 Добавить транспорт</h3>
+                <button class="btn-close" onclick="document.getElementById('vehicle-modal').classList.remove('active')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Гос. номер:</label>
+                    <input type="text" id="vehicle-plate" placeholder="А123АА 777">
+                </div>
+                <div class="form-group">
+                    <label>Тип ТС:</label>
+                    <select id="vehicle-type">
+                        <option value="Фура">Фура</option>
+                        <option value="Газель">Газель</option>
+                        <option value="Рефрижератор">Рефрижератор</option>
+                        <option value="Микроавтобус">Микроавтобус</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Грузоподъемность (кг):</label>
+                    <input type="number" id="vehicle-capacity" placeholder="20000">
+                </div>
+                <div class="form-group">
+                    <label>Тип транспорта:</label>
+                    <select id="vehicle-transport">
+                        <option value="auto">🚛 Авто</option>
+                        <option value="fly">✈️ Авиа</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Водитель:</label>
+                    <input type="text" id="vehicle-driver" placeholder="ФИО водителя">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn" onclick="document.getElementById('vehicle-modal').classList.remove('active')">Отмена</button>
+                <button class="btn btn-primary" onclick="logistic.addVehicle()">➕ Добавить</button>
+            </div>
+        </div>
+    </div>
+
+    <link rel="stylesheet" href="js/calculator-styles.css">
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <button id="btn-clear-storage" class="btn btn-warning" style="position: fixed; bottom: 10px; right: 10px; z-index: 1000;">
+        🗑️ Очистить localStorage
+    </button>
+    
+    <!-- Подключаем калькулятор ПЕРВЫМ, чтобы функции showCalcTab и другие были доступны сразу -->
+    <script src="js/api.js"></script>
+    <script src="js/database.js"></script>
+    <script src="js/calculator-v2-final.js?v=5"></script>
+    <script src="js/logistics-fixed.js"></script>
+    <script src="js/manager.js"></script>
+    <script src="js/map.js"></script>
+    <script src="js/main.js"></script>
+    
+    <script>
+        // Функция фильтрации агентов (для вкладки агентов)
+        function filterAgents() {
+            console.log('filterAgents called');
+            if (typeof renderAgentsGrid === 'function') {
+                renderAgentsGrid();
+            }
+        }
+        
+        // Кнопка очистки localStorage для тестирования
+        document.getElementById('btn-clear-storage')?.addEventListener('click', () => {
+            if (confirm('Это удалит ВСЕ данные (заявки, маршруты, этапы). Продолжить?')) {
+                localStorage.clear();
+                alert('localStorage очищен! Страница будет перезагружена.');
+                location.reload();
+            }
+        });
+        
+        // Проверка загрузки функций калькулятора
+        console.log('Проверка функций калькулятора:');
+        console.log('- showCalcTab:', typeof showCalcTab);
+        console.log('- calculate:', typeof calculate);
+        console.log('- renderAgentsGrid:', typeof renderAgentsGrid);
+    </script>
+</body>
+</html>
