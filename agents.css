@@ -1,0 +1,205 @@
+/* ========== АГЕНТЫ ========== */
+
+.agents-container {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.agents-header {
+  display: flex;
+  justify-content: space-between;
+
+    margin-bottom: 20px;
+}
+
+.agents-header h3 {
+  margin: 0;
+  color: var(--text-primary);
+  font-size: 20px;
+}
+
+/* Карточка агента */
+.agent-card {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 20px 24px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  width: 100%;
+  box-sizing: border-box;
+  transition: box-shadow 0.2s;
+}
+
+.agent-card:hover {
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+}
+
+/* Заголовок карточки */
+.agent-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.agent-header h4 {
+  margin: 0;
+  color: var(--text-primary);
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.agent-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.agent-actions .btn {
+  padding: 8px 16px;
+  font-size: 13px;
+}
+
+/* Регион */
+.agent-region {
+  margin-bottom: 14px;
+}
+
+.agent-region .badge {
+  background: #e0e7ff;
+  color: #4338ca;
+  padding: 3px 12px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+  display: inline-block;
+}
+
+/* Тарифы */
+.agent-tariffs {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin-bottom: 14px;
+  padding: 14px;
+  background: #f8fafc;
+  border-radius: 8px;
+}
+
+.agent-tariff-col {
+  text-align: center;
+}
+
+.agent-tariff-col .label {
+  margin: 0 0 4px 0;
+  font-size: 11px;
+  color: #94a3b8;
+  text-transform: uppercase;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+
+.agent-tariff-col .value {
+  margin: 0;
+  font-size: 15px;
+  color: #1e293b;
+  font-weight: 600;
+}
+
+/* Низ карточки: города + городской тариф */
+.agent-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 20px;
+}
+
+.agent-cities {
+  flex: 1;
+}
+
+.agent-cities .label {
+  margin: 0 0 6px 0;
+  font-size: 11px;
+  color: #94a3b8;
+  text-transform: uppercase;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+
+.agent-cities-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.city-tag {
+  background: #f1f5f9;
+  color: #475569;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+  border: 1px solid #e2e8f0;
+}
+
+.city-tag.empty {
+  color: #94a3b8;
+  background: transparent;
+  border: none;
+  padding: 4px 0;
+}
+
+/* Городской тариф */
+.agent-city-tariff {
+  text-align: right;
+  flex-shrink: 0;
+}
+
+.agent-city-tariff .label {
+  margin: 0 0 4px 0;
+  font-size: 11px;
+  color: #94a3b8;
+  text-transform: uppercase;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+
+.agent-city-tariff .value {
+  margin: 0;
+  font-size: 15px;
+  color: #059669;
+  font-weight: 700;
+}
+
+/* Адаптивность */
+@media (max-width: 768px) {
+  .agent-tariffs {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .agent-footer {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .agent-city-tariff {
+    text-align: left;
+  }
+
+  .agent-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .agent-actions {
+    width: 100%;
+  }
+
+  .agent-actions .btn {
+    flex: 1;
+  }
+}
+
+
