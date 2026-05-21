@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Сброс логистики</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .card {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #1e40af;
+            margin-bottom: 10px;
+        }
+        .status {
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            font-family: monospace;
+            font-size: 13px;
+        }
+        .status.success {
+            background: #d1fae5;
+            color: #065f46;
+            border: 1px solid #10b981;
+        }
+        .status.info {
+            background: #dbeafe;
+            color: #1e40af;
+            border: 1px solid #3b82f6;
+        }
+        button {
+            background: #1e40af;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            margin: 5px;
+        }
+        button:hover {
+            background: #1e3a8a;
+        }
+        button.danger {
+            background: #dc2626;
+        }
+        button.danger:hover {
+            background: #b91c1c;
+        }
+        .data-list {
+            background: #f9fafb;
+            padding: 15px;
+            border-radius: 6px;
+            margin: 15px 0;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .data-item {
+            padding: 8px;
+            border-bottom: 1px solid #e5e7eb;
+            font-size: 13px;
+        }
+        .data-item:last-child {
+            border-bottom: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h1>🔧 Сброс данных логистики</h1>
+        <p>Эта страница поможет сбросить данные логистики и восстановить водителей/агентов по умолчанию.</p>
+        
+        <div id="status" class="status info">
+            Нажмите "Показать данные" для просмотра текущего состояния
+        </div>
+        
+        <div style="margin: 20px 0;">
+            <button onclick="showData()">📊 Показать данные</button>
+            <button class="danger" onclick="resetDrivers()">🔄 Сбросить водителей</button>
+            <button class="danger" onclick="resetAgents()">🔄 Сбросить агентов</button>
+            <button class="danger" onclick="resetAll()">⚠️ Сбросить ВСЁ</button>
+            <button onclick="location.href='index.html'">↩️ Вернуться в TMS</button>
+        </div>
+        
+        <div id="dataOutput" class="data-list" style="display: none;"></div>
+        
+        <div style="margin-top: 30px; padding: 20px; background: #fef3c7; border-radius: 8px; border-left: 4px solid #f59e0b;">
+            <h3 style="margin-top: 0;">📖 Инструкция:</h3>
+            <ol style="margin: 10px 0; padding-left: 20px;">
+                <li>Нажмите <strong>"Сбросить водителей"</strong> и <strong>"Сбросить агентов"</strong></li>
+                <li>Или нажмите <strong>"Сбросить ВСЁ"</strong> для полной очистки</li>
+                <li>Вернитесь в TMS (кнопка выше)</li>
+                <li>Откройте вкладку <strong>"Логист" → "Назначение"</strong></li>
+                <li>Вы должны увидеть 3 водителей и 2 агентов</li>
+            </ol>
+        </div>
+    </div>
+
+    <script>
+        function showData() {
+            const output = document.getElementById('dataOutput');
+            const status = document.getElementById('status');
+            
+            const drivers = JSON.parse(localStorage.getItem('logistics_drivers') || '[]');
+            const agents = JSON.parse(localStorage.getItem('logistics_agents') || '[]');
+            const orders = JSON.parse(localStorage.getItem('logistics_orders') || '[]');
+            const routes = JSON.parse(localStorage.getItem('logistics_routes') || '[]');
+            
+            output.style.display = 'block';
+            output.innerHTML = `
+                <div class="data-item"><strong>👤 Водители:</strong> ${drivers.length} чел.</div>
+                ${drivers.map(d => `<div class="data-item">&nbsp;&nbsp;&nbsp;• ${d.name} (${d.vehicle})</div>`).join('')}
+                
+                <div class="data-item" style="margin-top: 15px;"><strong>🏢 Агенты:</strong> ${agents.length} шт.</div>
+                ${agents.map(a => `<div class="data-item">&nbsp;&nbsp;&nbsp;• ${a.name} (${a.vehicle})</div>`).join('')}
+                
+                <div class="data-item" style="margin-top: 15px;"><strong>📦 Заявки:</strong> ${orders.length} шт.</div>
+                <div class="data-item"><strong>🛣️ Маршруты:</strong> ${routes.length} шт.</div>
+            `;
+            
+            status.className = 'status info';
+            status.textContent = `Данные загружены. Водителей: ${drivers.length}, Агентов: ${agents.length}`;
+        }
+        
+        function resetDrivers() {
+            const defaultDrivers = [
+                { id: 1, name: 'Петров С.И.', phone: '+7 (916) 123-45-67', vehicle: 'А123АА 777', type: 'driver' },
+                { id: 2, name: 'Сидоров А.А.', phone: '+7 (917) 234-56-78', vehicle: 'Б456ВВ 777', type: 'driver' },
+                { id: 3, name: 'Козлов И.П.', phone: '+7 (925) 345-67-89', vehicle: 'В789СС 777', type: 'driver' }
+            ];
+            localStorage.setItem('logistics_drivers', JSON.stringify(defaultDrivers));
+            
+            const status = document.getElementById('status');
+            status.className = 'status success';
+            status.textContent = '✅ Водители сброшены! Теперь их 3 человека.';
+            showData();
+        }
+        
+        function resetAgents() {
+            const defaultAgents = [
+                { id: 4, name: 'ТрансЛогист', phone: '+7 (495) 100-20-30', vehicle: 'Флот (10 машин)', type: 'agent' },
+                { id: 5, name: 'Доставка-Сервис', phone: '+7 (495) 200-30-40', vehicle: 'Флот (5 машин)', type: 'agent' }
+            ];
+            localStorage.setItem('logistics_agents', JSON.stringify(defaultAgents));
+            
+            const status = document.getElementById('status');
+            status.className = 'status success';
+            status.textContent = '✅ Агенты сброшены! Теперь их 2 компании.';
+            showData();
+        }
+        
+        function resetAll() {
+            if (!confirm('Вы уверены? Это удалит ВСЕ данные логистики!')) return;
+            
+            localStorage.removeItem('logistics_drivers');
+            localStorage.removeItem('logistics_agents');
+            localStorage.removeItem('logistics_orders');
+            localStorage.removeItem('logistics_routes');
+            localStorage.removeItem('logistics_companies');
+            localStorage.removeItem('logistics_vehicles');
+            
+            const status = document.getElementById('status');
+            status.className = 'status success';
+            status.textContent = '✅ ВСЕ данные сброшены! Обновите страницу TMS.';
+            
+            // Авто-создание водителей и агентов
+            resetDrivers();
+            setTimeout(() => resetAgents(), 100);
+        }
+        
+        // Автоматически показать данные при загрузке
+        window.addEventListener('DOMContentLoaded', showData);
+    </script>
+</body>
+</html>

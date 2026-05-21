@@ -1,0 +1,82 @@
+/* Исправления для отображения - ГАРАНТИЯ ВИДИМОСТИ */
+
+/* Главный контейнер - прокрутка */
+.logistics-container {
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    max-height: none !important;
+    height: auto !important;
+    min-height: calc(100vh - 140px) !important;
+}
+
+/* Вкладки */
+.logistics-tab-content {
+    overflow: visible !important;
+    display: none;
+}
+
+.logistics-tab-content.active {
+    display: flex !important;
+    flex-direction: column !important;
+}
+
+/* Карточки */
+.card {
+    overflow: visible !important;
+    visibility: visible !important;
+    display: block !important;
+}
+
+.card-content {
+    overflow: auto !important;
+    visibility: visible !important;
+    display: block !important;
+}
+
+/* Нижняя секция назначения */
+.assignment-bottom-section {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 20px !important;
+    visibility: visible !important;
+    margin-top: 20px !important;
+}
+
+/* Панели */
+.assignment-left-panel,
+.assignment-right-panel {
+    display: flex !important;
+    flex-direction: column !important;
+    visibility: visible !important;
+}
+
+/* Списки с прокруткой */
+.assigned-stages-list,
+.drivers-list {
+    display: block !important;
+    visibility: visible !important;
+    overflow-y: auto !important;
+    min-height: 200px !important;
+    max-height: 350px !important;
+}
+
+/* Этапы по датам */
+.assignment-dates-grid {
+    display: block !important;
+    visibility: visible !important;
+    overflow-y: visible !important;
+}
+
+/* Таблица планирования */
+.table-responsive {
+    overflow: auto !important;
+    max-height: 450px !important;
+    display: block !important;
+}
+
+/* Сохранённые маршруты */
+.saved-routes-grid {
+    display: grid !important;
+    overflow-y: auto !important;
+    max-height: 300px !important;
+}
